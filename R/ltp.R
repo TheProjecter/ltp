@@ -1,0 +1,99 @@
+
+  
+############## ltp()
+
+ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noMaxCVOver = Inf,rule.noMaxJumpOver = Inf), n.ahead = 4, logtransform = TRUE,logtransform.es=FALSE, 
+                period.freq=2,increment=1, xreg.lm = NA,diff.sea=1,diff.trend=1,max.p=2,max.q=1,max.P=1,max.Q=0, 
+                xreg.arima = NULL,idDiff=FALSE,idLog=FALSE, stationary.arima = FALSE, period.start = c(1997, 1),
+                period.end=c(2010,1), 
+				NA2value = 3, range = c(3, Inf), n.min = 15, 
+				stepwise = TRUE, formula.right.lm = NULL, negTo0 = TRUE, toInteger = TRUE,
+				naive.values="last") {
+  
+#####################################
+  ## ATTENZIONE normalizedata: ho sistemato la mia versione a funziona
+  ## l'importante secondo me e' che venga aggiornata anche il nuovo period.start
+#####################################
+  ##__##logger(DEBUG, "Original data:")
+  ##__##logger(DEBUG, product)
+  ##__##logger(DEBUG, rownames(product))
+  ## result.normalize <- ltp.normalizeData(product, range, NA2value,period.end)
+  result.normalize <- ltp.normalizeData(product=product,range=range,NA2value=NA2value,period.start=period.start,increment=increment,period.end=period.end,period.freq=period.freq)
+  ##__##logger(DEBUG, "Normalized data:")
+  ##__##logger(DEBUG, result.normalize)
+  period.start = result.normalize$start
+  product = result.normalize$product
+  n = nrow(product)
+  
+  
+  if(idLog) logtransform = IDlog(product,period.start)
+  # CHecking if the latest values are constant...
+  tot.points <- nrow(product)
+  last.value <- product[tot.points,]
+  ##if(all(product[(nrow(product)-naive.ifConstantLastValues+1):nrow(product),]==0)){
+  if(all(product[(tot.points-naive.ifConstantLastValues+1):tot.points,] == last.value)){
+    warning(paste("The latest", naive.ifConstantLastValues, "historical data are constant (see param naive.ifConstantLastValues): predictions will be constant (value=", last.value, ") and naive model will be forced!"))
+    try.models="naive"
+    naive.values=last.value
+  }
+  if (is.null(try.models)) 
+    try.models = ltp.GetModels("id")
+
+  
+  models=list()
+  if (("naive" %in% try.models)) {
+    ##__##logger(DEBUG, "Evaluating model naive...")
+    models$Naive = mod.naive(product = product, n.ahead = n.ahead, 
+      period.start = period.start, period.freq = period.freq, period.end= period.end,
+      logtransform = FALSE, negTo0=negTo0,toInteger=toInteger,naive.values=naive.values)
+  }
+  if (("mean" %in% try.models)&(n >= period.freq )) {
+    ##__##logger(DEBUG, "Evaluating model mean...")
+    models$Mean = mod.lm(product = product, n.ahead = n.ahead, 
+      period.start = period.start, period.freq = period.freq, 
+      xreg.lm = NA, logtransform = FALSE, 
+      stepwise = FALSE, formula.right.lm = 'S', negTo0=negTo0,toInteger=toInteger)
+  }
+  if (("trend" %in% try.models)&(n > 2*period.freq )) {
+    ##__##logger(DEBUG, "Evaluating model trend...")
+    models$Trend = mod.lm(product = product, n.ahead = n.ahead, 
+      period.start = period.start, period.freq = period.freq, 
+      xreg.lm = NA, logtransform = FALSE, 
+      stepwise = FALSE, formula.right.lm = 'S+trend', negTo0=negTo0,toInteger=toInteger)
+  }
+  if (("lm" %in% try.models)&(n >= max(n.min,period.freq*3) )) {
+    ##__##logger(DEBUG, "Evaluating model lm...")
+    models$Linear = mod.lm(product = product, n.ahead = n.ahead, 
+      period.start = period.start, period.freq = period.freq, 
+      xreg.lm = xreg.lm, logtransform = logtransform, 
+      stepwise = stepwise, formula.right.lm = formula.right.lm, negTo0=negTo0,toInteger=toInteger)
+  }
+  if (("es" %in% try.models)&(n >= max(n.min,period.freq*3) )) {
+    ##__##logger(DEBUG, "Evaluating model es...")
+    models$ExpSmooth = mod.es(product = product, n.ahead = n.ahead, 
+      period.freq = period.freq, period.start = period.start, 
+      logtransform.es = logtransform.es, stepwise = stepwise, negTo0=negTo0,toInteger=toInteger)
+  }
+  if (("arima" %in% try.models)&(n >= max(n.min,period.freq*3) )) {
+    ##__##logger(DEBUG, "Evaluating model arima...")
+    models$Arima = mod.arima(product=product,logtransform=logtransform,
+      diff.sea=diff.sea,diff.trend=diff.trend,idDiff=idDiff,max.p=max.p,max.q=max.q,
+      max.P=max.P,max.Q=max.Q,stationary.arima=stationary.arima,n.ahead=n.ahead,
+      period.freq=period.freq,xreg.arima=xreg.arima,period.start=period.start,stepwise=stepwise, negTo0=negTo0,toInteger=toInteger)
+  }
+ 
+ 
+  ID.model=getBestModel(models,rule,ruleSetting)
+  out <- new("ltp.object")  
+  out @ values = product
+  out @ models=models
+  out @ BestModel = ID.model
+  out @ rule=rule
+  out @ ruleSetting=ruleSetting
+  
+  ##__##logger(DEBUG, "Predicted data (BestModel):")
+  ##__##logger(DEBUG, ID.model)
+  ##__##logger(DEBUG, (results["Naive"]))
+  out
+}
+
