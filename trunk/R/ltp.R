@@ -8,7 +8,7 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
                 period.end=c(2010,1), 
 				NA2value = 3, range = c(3, Inf), n.min = 15, 
 				stepwise = TRUE, formula.right.lm = NULL, negTo0 = TRUE, toInteger = TRUE,
-				naive.values="last") {
+				naive.values="last", naive.ifConstantLastValues=5) {
   
 #####################################
   ## ATTENZIONE normalizedata: ho sistemato la mia versione a funziona
