@@ -64,16 +64,20 @@ getModelsStatistics <- function(object,whichStats=c("AIC","IC.width","R2","VarCo
 }
 
 getRetainedModelsByRule <- function(models,ruleSetting){
-	retain=ifelse(getModelsStatistics(models,"VarCoeff")<ruleSetting$rule.noMaxCVOver,TRUE,FALSE)*
-	      ifelse(getModelsStatistics(models,"maxJump") <ruleSetting$rule.noMaxJumpOver,TRUE,FALSE)
-	retain
+	retain=(getModelsStatistics(models,"VarCoeff")<ruleSetting$rule.noMaxCVOver)&
+	       (getModelsStatistics(models,"maxJump") <ruleSetting$rule.noMaxJumpOver)
+	return(retain)	
 }
+
 
 getBestModel <- function(models,rule,ruleSetting){
 	stats=getModelsStatistics(models,switch(rule, BestIC="IC.width",BestAIC="AIC"))
-	retain=getRetainedModelsByRule (models,ruleSetting)
-  ID.model <- which.min(stats[retain]) ;
-  ID.model <- ltp.GetModels("name")[ID.model]
+	stats=unlist(stats)
+	names(stats)=names(models)
+	retain=unlist(getRetainedModelsByRule (models,ruleSetting))
+	ID.model <- names(which.min(stats[retain]))
+
   if((is.null(ID.model)||(length(ID.model)==0))||is.na(ID.model))  ID.model <-  "Naive"
   ID.model
   }
+	
