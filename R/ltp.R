@@ -76,7 +76,7 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
       xreg.lm = NA, logtransform = FALSE, 
       stepwise = FALSE, formula.right.lm = 'S+trend', negTo0=negTo0,toInteger=toInteger)
   }
-  if (("lm" %in% try.models)&(n >= max(n.min,period.freq*3) )) {
+  if (("lm" %in% try.models)&((period.freq>1)&(n >= max(n.min,period.freq*3) ))) {
     ##__##logger(DEBUG, "Evaluating model lm...")
     models$Linear = mod.lm(product = product, n.ahead = n.ahead, 
       period.start = period.start, period.freq = period.freq, 
