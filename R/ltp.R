@@ -30,12 +30,12 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
      period.freq <- max(sapply(strsplit(rownames(product), "-"), function(x) as.integer(x[2])))
   
   ## filling period.min if missing
-   if (is.null(period.min)) 
-     Period.FromString(min(rownames(product)))
+   if (is.null(period.start)) 
+     period.start <- Period.FromString(min(rownames(product)))
 
   ## filling period.mx if missing
-   if (is.null(period.max)) 
-     Period.FromString(max(rownames(product)))
+   if (is.null(period.end)) 
+     period.end <- Period.FromString(max(rownames(product)))
 
 #####################################
   ## ATTENZIONE normalizedata: ho sistemato la mia versione a funziona
