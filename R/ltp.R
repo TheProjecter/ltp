@@ -58,7 +58,8 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
   tot.points <- nrow(product)
   last.value <- product[tot.points,]
   ##if(all(product[(nrow(product)-naive.ifConstantLastValues+1):nrow(product),]==0)){
-  if(all(product[max(1,tot.points-naive.ifConstantLastValues+1):max(1,tot.points),] == last.value)){
+  ##if(all(product[max(1,tot.points-naive.ifConstantLastValues+1):max(1,tot.points),] == last.value)){
+  if(all(product[max(1,tot.points-naive.ifConstantLastValues+1):max(1,tot.points),] == 0)){
     warning(paste("The latest", naive.ifConstantLastValues, "historical data are constant (see param naive.ifConstantLastValues): predictions will be constant (value=", last.value, ") and naive model will be forced!"))
     try.models="naive"
     naive.values=last.value
