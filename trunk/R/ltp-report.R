@@ -129,7 +129,7 @@ ltp.BuildOneRowSummary <- function(id, model, param) {
     ##and rounding
     stats[c("MeanPredicted","MeanValues","MeanPredictedRatioMeanValues")]=lapply(stats[c("MeanPredicted","MeanValues","MeanPredictedRatioMeanValues")],round,3)
     ##sd predicted over sd values (ie observed data)
-    stats["SdPredictedRatioSdValues"]=round(sd(model@models[[model@BestModel]]$prediction,na.rm=T)/sd(model@values$V),3)
+    stats["SdPredictedRatioSdValues"]=round(sd((model@models[[model@BestModel]]$prediction),na.rm=T)/sd((model@values$V)),3)
 		
     ##Best Model if not exclusion rule were performed
     st=names(which.min(unlist(lapply(model@models[models.names],function(x) x$AIC))))
