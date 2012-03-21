@@ -23,7 +23,7 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
                 period.end=NULL, 
 				NA2value = 3, range = c(3, Inf), n.min = 15, 
 				stepwise = TRUE, formula.right.lm = NULL, negTo0 = TRUE, toInteger = TRUE,
-				naive.values="last", naive.ifConstantLastValues=5) {
+				naive.values="last", naive.ifConstantLastValues=5, naive.ifConstant0LastValues=5) {
   
   ## filling period.freq if missing
    if (is.null(period.freq)) 
@@ -55,19 +55,27 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
   
   if(idLog) logtransform = IDlog(product,period.start)
   # CHecking if the latest values are constant...
-  tot.points <- nrow(product)
-  last.value <- product[tot.points,]
-  ##if(all(product[(nrow(product)-naive.ifConstantLastValues+1):nrow(product),]==0)){
-  #if(all(product[max(1,tot.points-naive.ifConstantLastValues+1):max(1,tot.points),] == 0)){
-  if(all(product[max(1,tot.points-naive.ifConstantLastValues+1):max(1,tot.points),] == last.value)){
-    warning(paste("The latest", naive.ifConstantLastValues, "historical data are constant (see param naive.ifConstantLastValues): predictions will be constant (value=", last.value, ") and naive model will be forced!"))
-    try.models="naive"
-    naive.values=last.value
-  }
+  if(nrow(product)>0){
+    tot.points <- nrow(product)
+    last.value <- product[tot.points,]
+###############OCCHIO QUI!!!
+ # print(str(last.value))
+    if(all(product[max(1,tot.points-naive.ifConstant0LastValues+1):max(1,tot.points),] == 0)){
+      warning(paste("The latest", naive.ifConstant0LastValues, "historical data are constant (see param naive.ifConstant0LastValues): predictions will be constant (value=", 0, ") and naive model will be forced!"))
+      try.models="naive"
+      naive.values=0
+    } else
+    if(all(product[max(1,tot.points-naive.ifConstantLastValues+1):max(1,tot.points),] == last.value)){
+      warning(paste("The latest", naive.ifConstantLastValues, "historical data are constant (see param naive.ifConstantLastValues): predictions will be constant (value=", last.value, ") and naive model will be forced!"))
+      try.models="naive"
+      naive.values=last.value
+    }
+  } else {try.models="naive";  naive.values=0}
+
   if (is.null(try.models)) 
     try.models = ltp.GetModels("id")
 
-  
+
   models=list()
   if (("naive" %in% try.models)) {
     ##__##logger(DEBUG, "Evaluating model naive...")
@@ -80,14 +88,14 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
     models$Mean = mod.lm(product = product, n.ahead = n.ahead, 
       period.start = period.start, period.freq = period.freq, 
       xreg.lm = NA, logtransform = FALSE, 
-      stepwise = FALSE, formula.right.lm = 'S', negTo0=negTo0,toInteger=toInteger)
+      stepwise = FALSE, formula.right.lm = if(period.freq==1)'1' else 'S', negTo0=negTo0,toInteger=toInteger)
   }
   if (("trend" %in% try.models)&(n > 2*period.freq )) {
     ##__##logger(DEBUG, "Evaluating model trend...")
     models$Trend = mod.lm(product = product, n.ahead = n.ahead, 
       period.start = period.start, period.freq = period.freq, 
       xreg.lm = NA, logtransform = FALSE, 
-      stepwise = FALSE, formula.right.lm = 'S+trend', negTo0=negTo0,toInteger=toInteger)
+      stepwise = FALSE, formula.right.lm = if(period.freq==1) 'trend' else 'S+trend', negTo0=negTo0,toInteger=toInteger)
   }
   if (("lm" %in% try.models)&((period.freq>1)&(n >= max(n.min,period.freq*3) ))) {
     ##__##logger(DEBUG, "Evaluating model lm...")
@@ -110,15 +118,13 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
       period.freq=period.freq,xreg.arima=xreg.arima,period.start=period.start,stepwise=stepwise, negTo0=negTo0,toInteger=toInteger)
   }
  
- 
   ID.model=getBestModel(models,rule,ruleSetting)
   out <- new("ltp.object")  
   out @ values = product
   out @ models=models
   out @ BestModel = ID.model
   out @ rule=rule
-  out @ ruleSetting=ruleSetting
-  
+  out @ ruleSetting=ruleSetting  
   ##__##logger(DEBUG, "Predicted data (BestModel):")
   ##__##logger(DEBUG, ID.model)
   ##__##logger(DEBUG, (results["Naive"]))
