@@ -92,7 +92,7 @@ ltp.BuildOneRowSummary <- function(id, model, param) {
     return.code <- 2
   
   stats=as.list(rep(NA,11))
-  names(stats)=c("BestModel",
+  names(stats)=c("BestModel", "BestModel2",
          "Points","NotZeroPoints","LastNotEqualValues",
          "MeanPredicted","MeanValues","MeanPredictedRatioMeanValues","SdPredictedRatioSdValues",
          "BestAICNoOutRangeExclude","BestICNoOutRangeExclude","Timestamp")
@@ -106,6 +106,7 @@ ltp.BuildOneRowSummary <- function(id, model, param) {
   ##non zero values
   stats["NotZeroPoints"]=ifelse(no.values==0,0, sum(model@values$V!=0))
   stats["BestModel"] = ifelse(is.null(model@BestModel), NA, model@BestModel)
+  stats["BestModel2"] = ifelse(is.null(model@BestModel2), NA, model@BestModel2)
   stats["SuggestedModel"] =  stats["BestModel"]
   stats["Timestamp"] = Sys.time()
   stats["TotModels"] = length(param$try.models)
