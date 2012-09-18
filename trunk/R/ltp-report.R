@@ -91,11 +91,15 @@ ltp.BuildOneRowSummary <- function(id, model, param) {
   if (no.values == 0)
     return.code <- 2
   
-  stats=as.list(rep(NA,11))
-  names(stats)=c("BestModel", "BestModel2",
-         "Points","NotZeroPoints","LastNotEqualValues",
-         "MeanPredicted","MeanValues","MeanPredictedRatioMeanValues","SdPredictedRatioSdValues",
-         "BestAICNoOutRangeExclude","BestICNoOutRangeExclude","Timestamp")
+  stats=as.list(rep(NA,12))
+  names(stats)=c(
+         "BestModel", "SuggestedModel2",
+         "Points","NotZeroPoints",
+         "LastNotEqualValues","MeanPredicted",
+         "MeanValues","MeanPredictedRatioMeanValues",
+         "SdPredictedRatioSdValues","BestAICNoOutRangeExclude",
+         "BestICNoOutRangeExclude","Timestamp"
+         )
   ##stats["id"] <- id
   ##mean values (ie observed data)
   stats["MeanValues"]=mean(model@values$V,na.rm=TRUE)
@@ -106,8 +110,8 @@ ltp.BuildOneRowSummary <- function(id, model, param) {
   ##non zero values
   stats["NotZeroPoints"]=ifelse(no.values==0,0, sum(model@values$V!=0))
   stats["BestModel"] = ifelse(is.null(model@BestModel), NA, model@BestModel)
-  stats["BestModel2"] = ifelse(is.null(model@BestModel2), NA, model@BestModel2)
   stats["SuggestedModel"] =  stats["BestModel"]
+  stats["SuggestedModel2"] = ifelse(is.null(model@BestModel2), NA, model@BestModel2)
   stats["Timestamp"] = Sys.time()
   stats["TotModels"] = length(param$try.models)
   stats["Parameters"] = Param.ToString(param)
