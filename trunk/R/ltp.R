@@ -119,10 +119,21 @@ ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noM
   }
  
   ID.model=getBestModel(models,rule,ruleSetting)
+   
+  ## calculating second best model
+  if (ID.model == "Naive") {
+    ID.model2 <- NULL
+  } else {
+    models2 <- models
+    models2[[ID.model]] <- NULL
+    ID.model2=getBestModel(models2,rule,ruleSetting)
+  }
+   
   out <- new("ltp.object")  
   out @ values = product
   out @ models=models
   out @ BestModel = ID.model
+  out @ BestModel2 = ID.model2
   out @ rule=rule
   out @ ruleSetting=ruleSetting  
   ##__##logger(DEBUG, "Predicted data (BestModel):")

@@ -29,6 +29,7 @@ setClass("ltp.object",
     values = "data.frameOrNULL",
     models = "listOrNULL", 
 	BestModel="characterOrNULL",
+        BestModel2="characterOrNULL",       
 	rule="characterOrNULL",
 	ruleSetting="listOrNULL"
   ),
@@ -36,6 +37,7 @@ setClass("ltp.object",
 	values = NULL,
     models = NULL, 
 	BestModel=NULL,
+        BestModel2=NULL,
 	rule="BestAIC",
 	ruleSetting=NULL
   )
