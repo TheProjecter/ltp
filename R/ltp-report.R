@@ -15,6 +15,12 @@
 ## project website: http://code.google.com/p/ltp/
 ## created: 2011
 
+.Param.ToString <- function(param, collapse="; ") {
+  param <- lapply(param,function(p){if((length(p)==1)&(is.character(p))) p=paste("'",p,"'",sep="") else p })
+  param <- param[names(param)!=""]
+  gsub(" ","",gsub("\"","'",paste(names(param),param,sep="=",collapse=collapse)))
+}
+
 ###################################################
 #Crea tabella report
 
@@ -79,7 +85,7 @@ ltp.GetModelsComparisonTable <-  function(obj) {
 ## crea report sintetico
 
 
-ltp.BuildOneRowSummary <- function(id, model, param) {
+ltp.BuildOneRowSummary <- function(id=1, model, param) {
   models.names <- ltp.GetModels("name")
   no.values <- nrow(model@values)
   
@@ -114,7 +120,7 @@ ltp.BuildOneRowSummary <- function(id, model, param) {
   stats["SuggestedModel2"] = ifelse(is.null(model@BestModel2), NA, model@BestModel2)
   stats["Timestamp"] = Sys.time()
   stats["TotModels"] = length(param$try.models)
-  stats["Parameters"] = Param.ToString(param)
+  stats["Parameters"] = .Param.ToString(param)
   stats["ReturnCode"] = return.code
   stats["Run"] = 0
 

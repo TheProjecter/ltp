@@ -17,7 +17,7 @@
 
 library(XML)
 
-dfToXML <- function(df,name) {
+.dfToXML <- function(df,name) {
   xml <- xmlTree("ltp")
   xml$addNode(name, close=FALSE)
   for (i in 1:nrow(df)) {
@@ -31,10 +31,82 @@ dfToXML <- function(df,name) {
   return(xml)
 }
 
-dfToXMLfile <- function(df,name, file=NULL) {
+.dfToXMLfile <- function(df,name, file=NULL) {
   if (is.null(file)) {
     file=sprintf("%s.xml", name)
   }
   tr <- dfToXML(df,name)
   cat(saveXML(tr$value(), file=file))
 }
+
+
+modelToDataFrames <- function(model, period.freq, param, id=1) {
+  model.df <- list()
+
+  if ( nrow(model@values) > 0) {
+    normalized.periods <- rownames(model@values)
+    normalized.data <- data.frame(item_id=id, PERIOD=normalized.periods, V=model@values$V)
+
+    model.df$normalized.data <- normalized.data
+  }
+
+  summary <- ltp.BuildOneRowSummary(id=id, model=model, param=param)
+  model.df$summary <- summary
+
+  if (!is.null(model@BestModel)) {
+    summary.models <- data.frame(ltp.GetModelsComparisonTable(model))
+    summary.models = cbind(item_id=id, model=rownames(summary.models), summary.models)
+    model.df$summary.models <- summary.models
+  }
+
+  if (!is.null(model@BestModel)) {
+    all.results <- NULL
+    all.residuals <- NULL
+
+    predicted.periods <-Period.BuildRange(period.start=tail(normalized.periods, 1),
+                                          period.freq=period.freq,
+                                          n=param$n.ahead, shift=1)
+
+    for (m in names(model@models)) {
+      predictions <- as.vector(model@models[[m]]$prediction)
+      residuals <- as.vector(model@models[[m]]$Residuals)
+
+      if (length(predictions) > 0) {
+        model.results <- data.frame(
+           item_id=id,
+           model=m,
+           PERIOD=rownames(model@models[[m]]$prediction),
+           V=predictions)
+        all.results <- rbind(all.results, model.results)
+      }
+
+      if (length(residuals) >= 0) {
+        model.residuals <- data.frame(
+           item_id=id,
+           model=m,
+           PERIOD=predicted.periods,
+           V=trunc(residuals, 1))
+        all.residuals <- rbind(all.residuals, model.residuals)
+      }
+    } ## end for model
+
+
+    if (!is.null(all.results)) {
+      colnames(all.results) <- c("item_id", "model", "PERIOD", "V")
+      model.df$results <- all.results
+    }
+
+    if (!is.null(all.residuals)) {
+      colnames(all.residuals) <- c("item_id", "model", "PERIOD", "V")
+      model.df$residuals <- all.residuals
+    }
+
+
+  } ## end if
+
+}
+
+modelToHtml5 <- function(model, param, id=1, img.options=list(width=850, height=500, legend="bottom", gvis.editor="Editor")) {
+  model.df <- modelToDataFrames(model, param, id=1) 
+}
+ 
