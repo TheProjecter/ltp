@@ -40,7 +40,7 @@ library(XML)
 }
 
 
-modelToDataFrames <- function(model, period.freq, param, id=1) {
+modelToListOfDF <- function(model, period.freq, param, id=1) {
   model.df <- list()
 
   if ( nrow(model@values) > 0) {
@@ -63,28 +63,31 @@ modelToDataFrames <- function(model, period.freq, param, id=1) {
     all.results <- NULL
     all.residuals <- NULL
 
-    predicted.periods <-Period.BuildRange(period.start=tail(normalized.periods, 1),
+    tot.hist.points <- length(normalized.periods)
+    n.ahead <- param$n.ahead
+    period.end <- Period.FromString(tail(normalized.periods, 1))
+    predicted.periods <-Period.BuildRange(period.start=period.end,
                                           period.freq=period.freq,
-                                          n=param$n.ahead, shift=1)
+                                          n.ahead, shift=1)
 
     for (m in names(model@models)) {
       predictions <- as.vector(model@models[[m]]$prediction)
       residuals <- as.vector(model@models[[m]]$Residuals)
 
-      if (length(predictions) > 0) {
+      if (length(predictions) == n.ahead) {
         model.results <- data.frame(
-           item_id=id,
-           model=m,
-           PERIOD=rownames(model@models[[m]]$prediction),
+           item_id=rep(id, n.ahead),
+           model=rep(m, n.ahead),
+           PERIOD=predicted.periods,
            V=predictions)
         all.results <- rbind(all.results, model.results)
       }
 
-      if (length(residuals) >= 0) {
+      if (length(residuals) == tot.hist.points) {
         model.residuals <- data.frame(
-           item_id=id,
-           model=m,
-           PERIOD=predicted.periods,
+           item_id=rep(id, tot.hist.points),
+           model=rep(m, tot.hist.points),
+           PERIOD=normalized.periods,
            V=trunc(residuals, 1))
         all.residuals <- rbind(all.residuals, model.residuals)
       }
@@ -103,10 +106,10 @@ modelToDataFrames <- function(model, period.freq, param, id=1) {
 
 
   } ## end if
-
+  return(model.df)
 }
 
 modelToHtml5 <- function(model, param, id=1, img.options=list(width=850, height=500, legend="bottom", gvis.editor="Editor")) {
-  model.df <- modelToDataFrames(model, param, id=1) 
+  model.df <- modelToListOfDF(model, param, id=1) 
 }
  
