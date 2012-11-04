@@ -80,4 +80,19 @@ getBestModel <- function(models,rule,ruleSetting){
   if((is.null(ID.model)||(length(ID.model)==0))||is.na(ID.model))  ID.model <-  "Naive"
   ID.model
   }
-	
+
+Param.ToString <- function(param, collapse="; ") {
+  param <- lapply(param,function(p){if((length(p)==1)&(is.character(p))) p=paste("'",p,"'",sep="") else p })
+  param <- param[names(param)!=""]
+  gsub(" ","",gsub("\"","'",paste(names(param),param,sep="=",collapse=collapse)))
+}
+
+Param.FromString <- function(param.string) {
+  if (is.character(param.string)) {
+    param.string <- gsub(";",",", param.string)
+    param <- eval(parse(text=paste("list(",param.string,")")))
+  } else {
+    param <- list()
+  }
+  param
+}

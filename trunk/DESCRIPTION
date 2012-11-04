@@ -8,4 +8,4 @@ Maintainer: <livio.spam@gmail.com>
 Description: description
 License: GPL (>= 3)
 LazyLoad: yes
-Depends: methods,R2HTML, hwriter,tseries,forecast, XML
+Depends: methods,R2HTML, hwriter,tseries,forecast, XML, googleVis, reshape, xtable

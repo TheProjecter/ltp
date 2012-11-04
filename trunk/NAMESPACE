@@ -11,4 +11,4 @@ exportClasses(
      "ltp.object" 
 )
 
-import(methods,R2HTML, hwriter,tseries,forecast, XML)
+import(methods,R2HTML, hwriter, tseries, forecast, XML, xtable, reshape, googleVis)
