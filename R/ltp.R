@@ -17,18 +17,25 @@
   
 ############## ltp()
 
-ltp <- function(product, try.models, rule = "BestAIC", ruleSetting=list(rule.noMaxCVOver = Inf,rule.noMaxJumpOver = Inf), n.ahead = 4, logtransform = TRUE,logtransform.es=FALSE, 
+ltp <- function(product, try.models=c('mean','trend','lm','es','arima','naive'), rule = "BestAIC", ruleSetting=list(rule.noMaxCVOver = Inf,rule.noMaxJumpOver = Inf), n.ahead = 4, logtransform = TRUE,logtransform.es=FALSE, 
                 period.freq=NULL,increment=1, xreg.lm = NA,diff.sea=1,diff.trend=1,max.p=2,max.q=1,max.P=1,max.Q=0, 
                 xreg.arima = NULL,idDiff=FALSE,idLog=FALSE, stationary.arima = FALSE, period.start = NULL,
                 period.end=NULL, 
 				NA2value = 3, range = c(3, Inf), n.min = 15, 
-				stepwise = TRUE, formula.right.lm = NULL, negTo0 = TRUE, toInteger = TRUE,
+				stepwise = TRUE, formula.right.lm = "S*trend+S*trend2", negTo0 = TRUE, toInteger = TRUE,
 				naive.values="last", naive.ifConstantLastValues=5, naive.ifConstant0LastValues=5) {
-  
+
   ## filling period.freq if missing
    if (is.null(period.freq)) 
      period.freq <- max(sapply(strsplit(rownames(product), "-"), function(x) as.integer(x[2])))
-  
+
+  ## !!!!!!! 
+  ## some limitations when period.fre == 1
+  if (period.freq == 1) {
+    try.models <- setdiff(try.models, "arima")
+    formula.right.lm="trend+trend2"
+  }
+   
   ## filling period.min if missing
    if (is.null(period.start)) 
      period.start <- Period.FromString(min(rownames(product)))

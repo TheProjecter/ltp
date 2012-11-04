@@ -16,6 +16,8 @@
 ## created: 2012
 
 library(XML)
+library(googleVis)
+library(reshape)
 
 .dfToXML <- function(df,name) {
   xml <- xmlTree("ltp")
@@ -42,11 +44,12 @@ library(XML)
 
 modelToListOfDF <- function(model, period.freq, param, id=1) {
   model.df <- list()
+  model.df$BestModel <- model@BestModel
+  model.df$models <- names(model@models)
 
   if ( nrow(model@values) > 0) {
     normalized.periods <- rownames(model@values)
-    normalized.data <- data.frame(item_id=id, PERIOD=normalized.periods, V=model@values$V)
-
+    normalized.data <- data.frame(PERIOD=normalized.periods, V=model@values$V)
     model.df$normalized.data <- normalized.data
   }
 
@@ -55,7 +58,7 @@ modelToListOfDF <- function(model, period.freq, param, id=1) {
 
   if (!is.null(model@BestModel)) {
     summary.models <- data.frame(ltp.GetModelsComparisonTable(model))
-    summary.models = cbind(item_id=id, model=rownames(summary.models), summary.models)
+    summary.models = cbind(model=rownames(summary.models), summary.models)
     model.df$summary.models <- summary.models
   }
 
@@ -76,7 +79,6 @@ modelToListOfDF <- function(model, period.freq, param, id=1) {
 
       if (length(predictions) == n.ahead) {
         model.results <- data.frame(
-           item_id=rep(id, n.ahead),
            model=rep(m, n.ahead),
            PERIOD=predicted.periods,
            V=predictions)
@@ -85,7 +87,6 @@ modelToListOfDF <- function(model, period.freq, param, id=1) {
 
       if (length(residuals) == tot.hist.points) {
         model.residuals <- data.frame(
-           item_id=rep(id, tot.hist.points),
            model=rep(m, tot.hist.points),
            PERIOD=normalized.periods,
            V=trunc(residuals, 1))
@@ -95,12 +96,12 @@ modelToListOfDF <- function(model, period.freq, param, id=1) {
 
 
     if (!is.null(all.results)) {
-      colnames(all.results) <- c("item_id", "model", "PERIOD", "V")
+      colnames(all.results) <- c("model", "PERIOD", "V")
       model.df$results <- all.results
     }
 
     if (!is.null(all.residuals)) {
-      colnames(all.residuals) <- c("item_id", "model", "PERIOD", "V")
+      colnames(all.residuals) <- c("model", "PERIOD", "V")
       model.df$residuals <- all.residuals
     }
 
@@ -109,7 +110,61 @@ modelToListOfDF <- function(model, period.freq, param, id=1) {
   return(model.df)
 }
 
-modelToHtml5 <- function(model, param, id=1, img.options=list(width=850, height=500, legend="bottom", gvis.editor="Editor")) {
-  model.df <- modelToListOfDF(model, param, id=1) 
+modelDFtoHtml5 <- function(model.df, img.options=list(width=850, height=500, legend="bottom", gvis.editor="Editor")) {
+  body <- ""
+  
+  ## ##########################################################################
+  ## RESULTS
+  ## ##########################################################################
+  results.pivot <- cast(model.df$results, PERIOD ~ model, df=TRUE, value="V")
+  results.pivot <- data.frame(results.pivot)
+
+  AM <- gvisLineChart(data=results.pivot, options=img.options)
+  b_AM <- paste(capture.output(cat(AM$html$chart)), collapse="\n")
+
+  ## merging hiostorical + predected data
+  nrow <- nrow(model.df$normalized.data)
+  repeated.models <- unlist(lapply(model.df$models, function(x) rep(x,nrow)))
+  i.hist <- data.frame(model=repeated.models, model.df$normalized.data)
+  full.results <- rbind(i.hist, model.df$results)
+  full.results.best <- subset(full.results, model=model.df$BestModel, select=-model)
+  
+  full.results.pivot <- cast(full.results, PERIOD ~ model, df=TRUE, value="V")
+  full.results.pivot <- data.frame(full.results.pivot)
+
+  BM.full <- gvisLineChart(data=full.results.best, options=img.options)
+  AM.full <- gvisLineChart(data=full.results.pivot, options=img.options)
+  b_BM.full<- paste(capture.output(cat(BM.full$html$chart)), collapse="\n")
+  b_AM.full<- paste(capture.output(cat(AM.full$html$chart)), collapse="\n")
+  b_TR.full <- paste(capture.output(print(xtable(full.results.pivot), type="html")), collapse="\n")
+  ##TR <- gvisTable(item.results.pivot, options=list(width=700, height=500))
+  ##b_TR <- paste(capture.output(cat(TR$html$chart)), collapse="\n")
+
+  b_SM <- paste(capture.output(print(xtable(model.df$summary.models), type="html")), collapse="\n")
+
+  body <- paste(body, sprintf("<h1>Best Model %s</h1>", model.df$BestModel), b_BM.full, sep="\n")
+  body <- paste(body, "<h1>All Models</h1>", b_AM.full, b_SM, b_AM, b_TR.full, sep="\n")
+  
+  ## ##########################################################################
+  ## SUMMARY
+  ## ##########################################################################
+  model.df$summary$Parameters <- NULL
+  b_S <- paste(capture.output(print(xtable(t(model.df$summary)), type="html")), collapse="\n")
+  body <- paste(body, "<h1>Summary</h1>", b_S, sep="\n")
+
+  ## ##########################################################################
+  ## RESIDUALS
+  ## ##########################################################################
+  residuals.pivot <- cast(model.df$residuals, PERIOD ~ model, df=TRUE, value="V")
+  residuals.pivot <- data.frame(residuals.pivot)
+  RES <- gvisLineChart(data=residuals.pivot, options=img.options)
+  b_RES <- paste(capture.output(cat(RES$html$chart)), collapse="\n")
+  body <- paste(body, "<h1>Residuals</h1>", b_RES, sep="\n")
+  
+  body
 }
- 
+
+modelToHtml5 <- function(model, period.freq, param, id=1, img.options=list(width=850, height=500, legend="bottom", gvis.editor="Editor")) {
+  model.df <- modelToListOfDF(model=model, period.freq=period.freq, param=param, id=1)
+  modelDFtoHtml5(model.df, img.options=img.options)
+}
