@@ -45,7 +45,7 @@ library(reshape)
 modelToListOfDF <- function(model, period.freq, param, id=1) {
   model.df <- list()
   model.df$BestModel <- model@BestModel
-  model.df$models <- names(model@models)
+  model.df$models <- sort(names(model@models))
 
   if ( nrow(model@values) > 0) {
     normalized.periods <- rownames(model@values)
@@ -127,7 +127,7 @@ modelDFtoHtml5 <- function(model.df, img.options=list(width=850, height=500, leg
   repeated.models <- unlist(lapply(model.df$models, function(x) rep(x,nrow)))
   i.hist <- data.frame(model=repeated.models, model.df$normalized.data)
   full.results <- rbind(i.hist, model.df$results)
-  full.results.best <- subset(full.results, model=model.df$BestModel, select=-model)
+  full.results.best <- subset(full.results, model==model.df$BestModel, select=-model)
   
   full.results.pivot <- cast(full.results, PERIOD ~ model, df=TRUE, value="V")
   full.results.pivot <- data.frame(full.results.pivot)
