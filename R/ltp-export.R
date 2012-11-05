@@ -122,7 +122,7 @@ modelDFtoHtml5 <- function(model.df, img.options=list(width=850, height=500, leg
   AM <- gvisLineChart(data=results.pivot, options=img.options)
   b_AM <- paste(capture.output(cat(AM$html$chart)), collapse="\n")
 
-  ## merging hiostorical + predected data
+  ## merging hiostorical + predicted data
   nrow <- nrow(model.df$normalized.data)
   repeated.models <- unlist(lapply(model.df$models, function(x) rep(x,nrow)))
   i.hist <- data.frame(model=repeated.models, model.df$normalized.data)
@@ -132,9 +132,21 @@ modelDFtoHtml5 <- function(model.df, img.options=list(width=850, height=500, leg
   full.results.pivot <- cast(full.results, PERIOD ~ model, df=TRUE, value="V")
   full.results.pivot <- data.frame(full.results.pivot)
 
+  ## best model data grouped by freq
+  df <- full.results.best
+  p = sapply(as.character(df$PERIOD), function(x) y=unlist(strsplit(x, "-")))
+  df$PERIOD1 <- p[1,]
+  df$PERIOD2 <- p[2,]
+  full.results.best2.pivot <- as.data.frame(cast(df, PERIOD2 ~ PERIOD1, df=T, value="V"))
+  full.results.best2.pivot <- as.data.frame(cbind(month=rownames(full.results.best2.pivot), full.results.best2.pivot))
+  
   BM.full <- gvisLineChart(data=full.results.best, options=img.options)
+  BM2.full <- gvisColumnChart(data=full.results.best2.pivot, options=img.options)
   AM.full <- gvisLineChart(data=full.results.pivot, options=img.options)
+  
   b_BM.full<- paste(capture.output(cat(BM.full$html$chart)), collapse="\n")
+  b_BM2.full<- paste(capture.output(cat(BM2.full$html$chart)), collapse="\n")
+
   b_AM.full<- paste(capture.output(cat(AM.full$html$chart)), collapse="\n")
   b_TR.full <- paste(capture.output(print(xtable(full.results.pivot), type="html")), collapse="\n")
   ##TR <- gvisTable(item.results.pivot, options=list(width=700, height=500))
@@ -142,7 +154,7 @@ modelDFtoHtml5 <- function(model.df, img.options=list(width=850, height=500, leg
 
   b_SM <- paste(capture.output(print(xtable(model.df$summary.models), type="html")), collapse="\n")
 
-  body <- paste(body, sprintf("<h1>Best Model %s</h1>", model.df$BestModel), b_BM.full, sep="\n")
+  body <- paste(body, sprintf("<h1>Best Model %s</h1>", model.df$BestModel), b_BM.full, b_BM2.full, sep="\n")
   body <- paste(body, "<h1>All Models</h1>", b_AM.full, b_SM, b_AM, b_TR.full, sep="\n")
   
   ## ##########################################################################
