@@ -155,7 +155,7 @@ modelDFtoHtml5 <- function(model.df, img.options=list(width=850, height=500, leg
   b_SM <- paste(capture.output(print(xtable(model.df$summary.models), type="html")), collapse="\n")
 
   body <- paste(body, sprintf("<h1>Best Model %s</h1>", model.df$BestModel), b_BM.full, b_BM2.full, sep="\n")
-  body <- paste(body, "<h1>All Models</h1>", b_AM.full, b_SM, b_AM, b_TR.full, sep="\n")
+  body <- paste(body, "<h1>All Models</h1>", b_AM.full, b_SM, b_AM, b_TR.full, sep="<br />\n")
   
   ## ##########################################################################
   ## SUMMARY
