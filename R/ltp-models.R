@@ -184,6 +184,7 @@ mod.arima <- function(product,logtransform,diff.sea,diff.trend,idDiff,max.p,max.
 }
 
 ############## best.es()
+
 mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.es, stepwise,negTo0=negTo0,toInteger=toInteger) {
 	
   ##__##logger(DEBUG, "  function mod.es")
@@ -197,42 +198,41 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
                                         #stima_le = window(y,end=end_stima)
                                         #validazione_le = window(y,start=start_val)
   if (logtransform.es) {
-    mod = esId(log(y), keep = 1)
-    mod = mod[which(mod$rankAIC == 1), ]
-    modle = esFit(log(y), mod$drift, mod$sea, mod$inn)
-    pred = try(predict(modle, n.ahead, method = "resample"),TRUE)
-    
-    if( is(pred,"try-error") ) { 
+    modle = ets(log(y),model="ZZZ",opt.crit="lik",ic="aic")
+    pred = try(forecast(modle,level=c(95)))
+	
+    if(is(pred,"try-error")) { 
       return(list(ts.product = y, model = modle, prediction = NA, IC = NA, AIC = NA, R2 = NA, IC.width = NA, VarCoeff =NA, maxJump = NA, Residuals = NA))
     } else {
-      n.par = mod$np
-      es.AIC = modle$loglik + 2 * n.par
-      pred.modle = exp(unlist( pred[,c("mean"),drop=FALSE][,1]))
-      pred.modle[abs(pred.modle) == Inf] = NA
-      pred[abs(pred[,"97.5%"]) == Inf ,"97.5%"] =NA			
-      pred[abs(pred[,"2.5%"]) == Inf ,"2.5%"] =NA
-      IC.pred.modle = list(lwr = exp(pred[, "2.5%"]), upr = exp(pred[,"97.5%"]))
+      n.par = length(modle$par)
+      es.AIC = modle$aic
+      pred.modle = exp(as.vector(pred$mean))
+	  pred.modle[abs(pred.modle) == Inf] = NA
+	  pLower = as.vector(pred$lower)
+	  pLower[pLower==Inf] = NA
+	  pUpper = as.vector(pred$upper)
+	  pUpper[pUpper==Inf] = NA
+      IC.pred.modle = list(lwr = exp(pLower), upr = exp(pUpper))
       tss = var(y) * (n - 1)
                                         #errori_le = abs(as.vector(log(validazione_le) - log(pred.modle)))
                                         #media_errori = mean(errori_le)
     }
   }
   else {
-    mod = esId(y, keep = 1)
-    mod = mod[which(mod$rankAIC == 1), ]
-    modle = esFit(y, mod$drift, mod$sea, mod$inn)  
-    pred = try(predict(modle, n.ahead, method = "resample"),TRUE)
-    if( is(pred,"try-error") ) { 
+    modle = ets(y,model="ZZZ",opt.crit="lik",ic="aic")
+    pred = try(forecast(modle,level=c(95)))
+	if( is(pred,"try-error") ) { 
       return(list(ts.product = y, model = modle, prediction = NA, IC = NA, AIC = NA, R2 = NA, IC.width = NA, VarCoeff =NA, maxJump = NA, Residuals = NA))
     } else {
-      n.par = mod$np
-      es.AIC = modle$loglik + 2 * n.par
-      pred.modle =unlist( pred[,c("mean"),drop=FALSE][,1])
-#############OCCHIO QUI
+	  n.par = length(modle$par)
+      es.AIC = modle$aic
+      pred.modle = as.vector(pred$mean)
       pred.modle[abs(pred.modle) == Inf] = NA
-      pred[abs(pred[,"97.5%"]) == Inf ,"97.5%"] =NA			
-      pred[abs(pred[,"2.5%"]) == Inf ,"2.5%"] =NA
-      IC.pred.modle = list(lwr = pred[, "2.5%"], upr = pred[,"97.5%"])
+	  pLower = as.vector(pred$lower)
+	  pLower[pLower==Inf] = NA
+	  pUpper = as.vector(pred$upper)
+	  pUpper[pUpper==Inf] = NA
+      IC.pred.modle = list(lwr = pLower , upr = pUpper )
       tss = var(y) * (n - 1)
                                         #errori_le = abs(as.vector(log(validazione_le) - log(pred.modle)))
                                         #media_errori = mean(errori_le)
@@ -247,7 +247,7 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
 	pred.modle=round(pred.modle,0)
 	}
 	
-  res = residuals(modle)
+  res = as.vector(residuals(modle))
   rss = sum(res^2)
   r2 = 1 - (rss/tss)
                                         #k = n.par
@@ -264,6 +264,7 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
     IC = IC.pred.modle, AIC = es.AIC, R2 = es.R2, IC.width = ic.delta, maxJump=maxJump,  VarCoeff=VarCoeff, Residuals = res)
   lista.es
 }
+
 
 
 ###############################################
