@@ -199,7 +199,7 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
                                         #validazione_le = window(y,start=start_val)
   if (logtransform.es) {
     modle = ets(log(y),model="ZZZ",opt.crit="lik",ic="aic")
-    pred = try(forecast(modle,level=c(95)))
+    pred = try(forecast(modle, h=n.ahead, level=c(95)))
 	
     if(is(pred,"try-error")) { 
       return(list(ts.product = y, model = modle, prediction = NA, IC = NA, AIC = NA, R2 = NA, IC.width = NA, VarCoeff =NA, maxJump = NA, Residuals = NA))
