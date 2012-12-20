@@ -232,7 +232,7 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
     } else {
 	  n.par = length(modle$par)
       es.AIC = modle$aic
-      pred.modle = as.vector(pred$mean)
+      pred.modle = as.vector(pred$mean)[1:n.ahead]
       pred.modle[abs(pred.modle) == Inf] = NA
 	  pLower = as.vector(pred$lower)
 	  pLower[pLower==Inf] = NA
