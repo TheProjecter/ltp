@@ -187,6 +187,11 @@ mod.arima <- function(product,logtransform,diff.sea,diff.trend,idDiff,max.p,max.
 
 mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.es, stepwise,negTo0=negTo0,toInteger=toInteger) {
 	
+  h <- n.ahead / period.freq
+  h.round <- round(h)
+  if ( h.round > h)
+    h <- h + 1
+
   ##__##logger(DEBUG, "  function mod.es")
 	#occhio qui:
 	product[product==0]=1
@@ -199,7 +204,8 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
                                         #validazione_le = window(y,start=start_val)
   if (logtransform.es) {
     modle = ets(log(y),model="ZZZ",opt.crit="lik",ic="aic")
-    pred = try(forecast(modle, h=n.ahead, level=c(95)))
+
+    pred = try(forecast(modle, h=h, level=c(95)))
 	
     if(is(pred,"try-error")) { 
       return(list(ts.product = y, model = modle, prediction = NA, IC = NA, AIC = NA, R2 = NA, IC.width = NA, VarCoeff =NA, maxJump = NA, Residuals = NA))
@@ -220,7 +226,7 @@ mod.es <- function(product, n.ahead, period.start, period.freq, n, logtransform.
   }
   else {
     modle = ets(y,model="ZZZ",opt.crit="lik",ic="aic")
-    pred = try(forecast(modle,level=c(95)))
+    pred = try(forecast(modle, h=h, level=c(95)))
 	if( is(pred,"try-error") ) { 
       return(list(ts.product = y, model = modle, prediction = NA, IC = NA, AIC = NA, R2 = NA, IC.width = NA, VarCoeff =NA, maxJump = NA, Residuals = NA))
     } else {
